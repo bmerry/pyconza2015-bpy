@@ -12,6 +12,9 @@
 \usepackage{tikz}
 \usepackage{booktabs}
 \usepackage{listings}
+\usepackage[binary-units=true]{siunitx}
+\usepackage{amsmath}
+\usepackage{underscore}
 \definecolor{lstpurple}{rgb}{0.5,0,0.35}
 \definecolor{lstred}{rgb}{0.6,0,0}
 \definecolor{lstgreen}{rgb}{0.25,0.5,0.35}
@@ -78,6 +81,81 @@
 
 \section{Motivation}
 
+\subsection{MeerKAT}
+
+\subsection{SPEAD}
+
+\begin{frame}{High-performance Networking}
+  \alert{S}treaming \alert{P}rotocol for \alert{E}xchange of
+  \alert{A}stronomical \alert{D}ata
+  \begin{itemize}
+    \item Generic, not astronomy-specific at all
+    \item Used in MeerKAT for data (and occasionally metadata)
+    \item Lossy one-way UDP transmission, multicast-friendly
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Concepts}
+  \begin{description}
+    \item[Heap] Unit of transmission. Contains multiple items.
+    \item[Item] Data in a numpy array.
+    \item[Packet] UDP packet
+  \end{description}
+  Heaps are broken down into multiple packets
+\end{frame}
+
+\begin{frame}{Example}
+  Correlator heaps at \SI{2}{\Hz}:
+  \begin{itemize}
+    \item \texttt{xeng_raw} $8320\times 32768\times 2\times \text{int32}$
+    \item \texttt{timestamp} int
+  \end{itemize}
+  Each \SI{2}{\gibi\byte} heap is split into \SI{9}{\kilo\byte} packets.
+
+  \pause
+  Total rate is \SI{35}{Gbps} / \SI{475}{Kpps}.
+
+  \pause
+  In reality, will split this into several streams.
+\end{frame}
+
+\begin{frame}{Not Your Average High-Speed Networking}
+  \begin{itemize}
+    \item Large packets (MTU 9200)
+    \item Small number of flows
+    \item Bandwidth matters, latency doesn't
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Just To Make It Interesting}
+  I had some goals:
+  \begin{itemize}
+    \item Run without root privileges
+    \item Run on Linux and OS X
+  \end{itemize}
+\end{frame}
+
+% Add a slide giving examples of how sensitive things are
+\section{Talking to C++}
+
+\subsection{An Example C++ Library}
+
+\begin{frame}[fragile=singleslide]{Code}
+\begin{lstlisting}[lang=c++]
+class Parrot
+{
+private:
+    int volts;
+public:
+    void voom();
+    void set_volts();
+    int get_volts() const;
+};
+\end{lstlisting}
+\end{frame}
+
+\subsection{Python C API}
+
 % - The problem
 %   - MeerKAT
 %   - SPEAD
@@ -110,7 +188,7 @@
 
 \begin{frame}{Summary}
   \begin{itemize}
-    \item Great for integrating C++ classes
+    \item Fantastic for integrating C++ classes
     \item Can drop down to Python C API when needed
     \item Introduces a system library dependency
   \end{itemize}
