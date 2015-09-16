@@ -7,6 +7,6 @@ extension = Extension(
     depends=['../cpp/petshop.h'],
     language='c++',
     include_dirs=['../cpp'],
-    libraries=['boost_python'])
+    libraries=['boost_python-py34'])
 
 setup(name='bpy_petshop', ext_modules=[extension])
