@@ -141,16 +141,21 @@
 \subsection{An Example C++ Library}
 
 \begin{frame}[fragile=singleslide]{Code}
-\begin{lstlisting}[lang=c++]
+\begin{lstlisting}[language=c++]
+namespace petshop
+{
+
 class Parrot
 {
 private:
     int volts;
 public:
     void voom();
-    void set_volts();
+    void set_volts(int volts);
     int get_volts() const;
 };
+
+}
 \end{lstlisting}
 \end{frame}
 
