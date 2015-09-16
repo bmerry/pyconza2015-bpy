@@ -49,7 +49,7 @@ static int Parrot_set_volts(Parrot *self, PyObject *value, void *closure)
         return -1;
     if (volts < INT_MIN || volts > INT_MAX)
     {
-        PyErr_SetString(PyExc_OverflowError, "Python int to large to convert to C int");
+        PyErr_SetString(PyExc_OverflowError, "Python int too large to convert to C int");
         return -1;
     }
     self->wrapped.set_volts(volts);
