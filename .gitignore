@@ -1,7 +1,8 @@
-*.aux
-*.log
-*.nav
-*.out
-*.toc
-*.snm
-bpy-spead.pdf
+/*.aux
+/*.log
+/*.nav
+/*.out
+/*.toc
+/*.snm
+/bpy-spead.pdf
+*.egg-info
