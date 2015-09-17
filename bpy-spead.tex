@@ -16,6 +16,7 @@
 \usepackage[binary-units=true]{siunitx}
 \usepackage{amsmath}
 \usepackage{underscore}
+\usepackage{bbding}
 \definecolor{lstpurple}{rgb}{0.5,0,0.35}
 \definecolor{lstred}{rgb}{0.6,0,0}
 \definecolor{lstgreen}{rgb}{0.25,0.5,0.35}
@@ -94,7 +95,8 @@
   \alert{A}stronomical \alert{D}ata
   \begin{itemize}
     \item Generic, not astronomy-specific at all
-    \item Used in MeerKAT for data (and occasionally metadata)
+    \item Designed for moving numpy arrays around
+    \item Used extensively in KAT-7 and MeerKAT
     \item Lossy one-way UDP transmission, multicast-friendly
   \end{itemize}
 \end{frame}
@@ -103,7 +105,7 @@
   \begin{description}
     \item[Heap] Unit of transmission. Contains multiple items.
     \item[Item] Data in a numpy array.
-    \item[Packet] UDP packet
+    \item[Packet] UDP packet.
   \end{description}
   Heaps are broken down into multiple packets
 \end{frame}
@@ -165,9 +167,9 @@ public:
 \end{lstlisting}
 \end{frame}
 
-\subsection{Python C API}
+\subsection{The Interface Zoo}
 
-\begin{frame}[fragile]{A Small Example}
+\begin{frame}[fragile]{Python C API}
   \begin{lstlisting}[language=c++,
     basicstyle=\ttfamily\supertiny,
     numberstyle=\supertiny,
@@ -272,8 +274,6 @@ PyMODINIT_FUNC PyInit_capi_petshop(void) {
   }%
 \end{frame}
 
-\subsection{cffi}
-
 \begin{frame}{cffi}
   C Foreign Function Interface
   TODO:
@@ -281,7 +281,7 @@ PyMODINIT_FUNC PyInit_capi_petshop(void) {
   - mention PyPy
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Wrap C++ in C}
+\begin{frame}[fragile=singleslide]{cffi}{Wrap C++ in C}
   \begin{lstlisting}[language=c]
 typedef struct
 {
@@ -296,7 +296,7 @@ int parrot_get_volts(parrot_handle);
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Wrap C in Procedural Python}
+\begin{frame}[fragile=singleslide]{cffi}{Wrap C in Procedural Python}
   \begin{lstlisting}[language=python]
 from cffi import FFI
 ffi = FFI()
@@ -319,7 +319,7 @@ if __name__ == '__main__': ffi.compile()
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Add Back the OO}
+\begin{frame}[fragile=singleslide]{cffi}{Add Back the OO}
   \begin{lstlisting}[language=python]
 from _cffi_petshop import ffi, lib
 
@@ -343,13 +343,11 @@ class Parrot(object):
   \end{lstlisting}
 \end{frame}
 
-\subsection{Cython}
-
 \begin{frame}{Cython}
   TODO: diagram of how Cython works
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Definition File}
+\begin{frame}[fragile=singleslide]{Cython}{Definition File}
   \begin{lstlisting}[language=cython]
 cdef extern from "petshop.h" namespace "petshop":
     cdef cppclass Parrot:
@@ -359,7 +357,7 @@ cdef extern from "petshop.h" namespace "petshop":
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Wrapper}
+\begin{frame}[fragile=singleslide]{Cython}{Wrapper}
   \begin{lstlisting}[language=cython]
 cimport c_petshop
 
@@ -378,7 +376,7 @@ cdef class Parrot:
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Sometimes This Happens}
+\begin{frame}[fragile=singleslide]{Cython}{Sometimes This Happens}
   \footnotesize
   \begin{verbatim}
 Error compiling Cython file:
@@ -397,10 +395,6 @@ FromPyStructUtility:11:39: Expected an identifier or literal
   \end{verbatim}
 \end{frame}
 
-\subsection{SWIG}
-
-\subsection{Boost.Python}
-
 \begin{frame}[fragile=singleslide]{Boost.Python}
   \begin{lstlisting}[language=c++]
 #include <boost/python.hpp>
@@ -417,6 +411,40 @@ BOOST_PYTHON_MODULE(bpy_petshop)
             &Parrot::get_volts, &Parrot::set_volts);
 }
   \end{lstlisting}
+\end{frame}
+
+\begin{frame}{Sir-Not-Appearing-In-These-Slides}
+  SWIG
+  \begin{itemize}
+    \item Targets many languages, not just Python
+    \item Understands C++ and templates
+    \item Compiles to Python C API
+    \item Quick glance at docs look promising!
+  \end{itemize}
+  ctypes
+  \begin{itemize}
+    \item Pure Python, no compilation step
+    \item Similar to cffi, but ABI-level only
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary}
+  \def\yes{\textcolor{green!50!black}{\CheckmarkBold}}
+  \def\no{\textcolor{red}{\XSolidBrush}}
+  \begin{table}
+    \begin{tabular}{lcccc}
+      \toprule
+      Interface & C++ & PyPy & No new lang & Runtime\\
+      \midrule
+      C API & \no & \no & \yes & ---\\
+      cffi  & \no & \yes & \yes & cffi\\
+      Cython & \yes & \no & \no & ---\\
+      Boost.Python & \yes & \no & \yes & Boost\\
+      ctypes & \no & (\yes) & \yes & ---\\
+      SWIG & \yes & \no & \no & ?\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
 \end{frame}
 
 % - The problem
