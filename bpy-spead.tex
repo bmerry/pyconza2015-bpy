@@ -31,6 +31,8 @@
     stringstyle = \color{lstred},
     numbers=left,numberstyle=\tiny,numbersep=1ex
 }
+\lstdefinelanguage{cython}[]{python}{morekeywords={
+    cdef, cimport, cppclass, extern, namespace}}
 
 \title[Boost.Python]{How I learn to stop worrying and love Boost.Python}
 
@@ -140,15 +142,17 @@
 % Add a slide giving examples of how sensitive things are
 \section{Talking to C++}
 
+\begin{frame}{CPython}
+  TODO: slide about how PyPy is not covered
+\end{frame}
+
 \subsection{An Example C++ Library}
 
 \begin{frame}[fragile=singleslide]{Code}
 \begin{lstlisting}[language=c++]
-namespace petshop
-{
+namespace petshop {
 
-class Parrot
-{
+class Parrot {
 private:
     int volts;
 public:
@@ -263,10 +267,137 @@ PyMODINIT_FUNC PyInit_capi_petshop(void) {
   \pause
   \only<2>{%
     \begin{tikzpicture}[remember picture,overlay]
-      \node[inner sep=2cm,fill=gray!50!white,fill opacity=0.7,text opacity=1] at  (current page.center) {\Huge Never do this};
+      \node at  (current page.center) {\Huge \bfseries Just Say No};
     \end{tikzpicture}%
   }%
 \end{frame}
+
+\subsection{cffi}
+
+\begin{frame}{cffi}
+  C Foreign Function Interface
+  TODO:
+  - diagram
+  - mention PyPy
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Wrap C++ in C}
+  \begin{lstlisting}[language=c]
+typedef struct
+{
+    void *parrot;
+} parrot_handle;
+
+parrot_handle parrot_new(void);
+void parrot_delete(parrot_handle);
+void parrot_voom(parrot_handle);
+void parrot_set_volts(parrot_handle, int volts);
+int parrot_get_volts(parrot_handle);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Wrap C in Procedural Python}
+  \begin{lstlisting}[language=python]
+from cffi import FFI
+ffi = FFI()
+
+ffi.set_source("_cffi_petshop",
+    '#include "petshop_wrap.h"',
+    include_dirs=['../cpp'],
+    sources=[
+      '../cpp/petshop_wrap.cpp', '../cpp/petshop.cpp'],
+    language='c++')
+ffi.cdef("""
+typedef struct { ...; } parrot_handle;
+parrot_handle parrot_new(void);
+void parrot_delete(parrot_handle);
+void parrot_voom(parrot_handle);
+void parrot_set_volts(parrot_handle, int volts);
+int parrot_get_volts(parrot_handle);""")
+
+if __name__ == '__main__': ffi.compile()
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Add Back the OO}
+  \begin{lstlisting}[language=python]
+from _cffi_petshop import ffi, lib
+
+class Parrot(object):
+    def __init__(self):
+        self._this = lib.parrot_new()
+
+    def __del__(self):
+        lib.parrot_delete(self._this)
+
+    def voom(self):
+        lib.parrot_voom(self._this)
+
+    @property
+    def volts(self):
+        return lib.parrot_get_volts(self._this)
+
+    @volts.setter
+    def volts(self, value):
+        lib.parrot_set_volts(self._this, value)
+  \end{lstlisting}
+\end{frame}
+
+\subsection{Cython}
+
+\begin{frame}{Cython}
+  TODO: diagram of how Cython works
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Definition File}
+  \begin{lstlisting}[language=cython]
+cdef extern from "petshop.h" namespace "petshop":
+    cdef cppclass Parrot:
+        void voom()
+        void set_volts(int volts)
+        int get_volts()
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Wrapper}
+  \begin{lstlisting}[language=cython]
+cimport c_petshop
+
+cdef class Parrot:
+    cdef c_petshop.Parrot _this
+
+    def voom(self):
+        self._this.voom()
+
+    property volts:
+        def __get__(self):
+            return self._this.get_volts()
+
+        def __set__(self, volts):
+            self._this.set_volts(volts)
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Sometimes This Happens}
+  \footnotesize
+  \begin{verbatim}
+Error compiling Cython file:
+------------------------------------------------------------
+...
+    PyTypeObject *Py_TYPE(obj)
+    bint PyMapping_Check(obj)
+    object PyErr_Format(exc, const char *format, ...)
+
+@cname("__pyx_convert__from_py_spead::in::item")
+cdef item __pyx_convert__from_py_spead::in::item(obj) except *:
+                                      ^
+------------------------------------------------------------
+
+FromPyStructUtility:11:39: Expected an identifier or literal
+  \end{verbatim}
+\end{frame}
+
+\subsection{SWIG}
 
 \subsection{Boost.Python}
 
