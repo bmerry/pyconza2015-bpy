@@ -21,8 +21,13 @@
 \definecolor{lstred}{rgb}{0.6,0,0}
 \definecolor{lstgreen}{rgb}{0.25,0.5,0.35}
 \definecolor{lstblue}{rgb}{0.25,0.35,0.75}
+\def\linline{\lstinline[basicstyle=\ttfamily]}
 \newcommand\supertiny{\fontsize{3.5pt}{4.2}\selectfont}
-\lstset{language = Python,
+\lstdefinelanguage{cython}[]{python}{morekeywords={
+    cdef, cimport, cppclass, extern, namespace}}
+\lstdefinelanguage[extra]{python}[]{python}{morekeywords=[2]{
+    bytes, yield, unicode}}
+\lstset{language = [extra]python,
     showstringspaces = false,
     columns = flexible,
     basicstyle = \ttfamily\footnotesize,
@@ -32,9 +37,6 @@
     stringstyle = \color{lstred},
     numbers=left,numberstyle=\tiny,numbersep=1ex
 }
-\lstdefinelanguage{cython}[]{python}{morekeywords={
-    cdef, cimport, cppclass, extern, namespace}}
-
 \title[Boost.Python]{How I learn to stop worrying and love Boost.Python}
 
 \subtitle{An adventure in high-performance networking}
@@ -428,7 +430,7 @@ BOOST_PYTHON_MODULE(bpy_petshop)
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Summary}
+\begin{frame}{Interface Summary}
   \def\yes{\textcolor{green!50!black}{\CheckmarkBold}}
   \def\no{\textcolor{red}{\XSolidBrush}}
   \begin{table}
@@ -474,6 +476,77 @@ BOOST_PYTHON_MODULE(bpy_petshop)
 %   - logging
 %   - exceptions
 %   - bytestring conversion
+
+\section{Boost.Python}
+
+\subsection{Global Interpreter Lock}
+
+\begin{frame}{Why do we care?}
+  \begin{itemize}
+    \item Waiting for a heap should not block other threads
+    \item Non-Python threads calling Python code
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Releasing the GIL, C++-style}
+  \begin{lstlisting}[language=c++]
+class release_gil {
+private:
+    PyThreadState *save;
+
+public:
+    release_gil() {
+        save = PyEval_SaveThread();
+    }
+
+    ~release_gil() {
+        PyEval_RestoreThread(save);
+    }
+};
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Acquiring the GIL, C++ style}
+  \begin{lstlisting}[language=c++]
+class acquire_gil {
+private:
+    PyGILState_STATE gstate;
+
+public:
+    acquire_gil() {
+        gstate = PyGILState_Ensure();
+    }
+
+    ~acquire_gil() {
+        PyGILState_Release(gstate);
+    }
+};
+  \end{lstlisting}
+\end{frame}
+
+\subsection{Unicode}
+
+\begin{frame}{Quick Reminder}
+  \centering
+  \begin{tabular}{ccl}
+    \toprule
+    \textbf{Python 2} & \textbf{Python 3} & \textbf{Purpose}\\
+    \midrule
+    \linline"str" / \linline"bytes" & \linline"bytes" & Encoded byte sequence\\
+    \linline"unicode" & \linline"str" & Unicode code points\\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{What Would Boost.Python Do?}
+  \begin{description}
+    \item[Python 2] \linline"str" $\leftrightarrow$ \linline"std::string"
+    \item[Python 3] \linline"str" $\leftrightarrow$ \linline"std::string", UTF-8\\
+                    \linline"bytes" $\rightarrow$ \linline"std::string"
+  \end{description}
+  \pause
+  What if I want \linline"bytes" $\leftrightarrow$ \linline"std::string"?
+\end{frame}
 
 \section*{Summary}
 
