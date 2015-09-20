@@ -545,7 +545,46 @@ public:
                     \linline"bytes" $\rightarrow$ \linline"std::string"
   \end{description}
   \pause
-  What if I want \linline"bytes" $\leftrightarrow$ \linline"std::string"?
+  What if I want \linline"std::string" $\rightarrow$ \linline"bytes"?
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Custom Converters}
+We'll define a new C++ class for this.
+  \begin{lstlisting}[language=c++]
+class bytestring : public std::string {
+{
+public:
+    using std::string::string;
+
+    bytestring(const std::string &s)
+        : std::string(s) {}
+    bytestring(std::string &&s)
+        : std::string(std::move(s)) {}
+};
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Custom Converters}
+  Define how to convert it to Python:
+  \begin{lstlisting}[language=c++]
+class bytestring_to_python
+{
+public:
+    static PyObject *convert(const bytestring &s)
+    {
+        return PyBytes_FromStringAndSize(
+            s.data(), s.size());
+    }
+};
+  \end{lstlisting}
+  {\footnotesize (only Python 3 version shown)}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Custom Converters}
+  \alert{Register} the converter
+  \begin{lstlisting}[language=c++]
+to_python_converter<bytestring, bytestring_to_python>();
+  \end{lstlisting}
 \end{frame}
 
 \section*{Summary}
