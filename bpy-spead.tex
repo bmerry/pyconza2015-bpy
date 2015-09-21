@@ -121,7 +121,7 @@
 
 \begin{frame}{Concepts}
   \begin{description}
-    \item[Item] Data in a numpy array.
+    \item[Item] A multidimensional array of data.
     \item[Heap] Unit of transmission. Contains multiple items.
     \item[Packet] UDP packet.
   \end{description}
@@ -321,8 +321,7 @@ cdef class Parrot:
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Cython}{Sometimes This Happens}
-  \footnotesize
-  \begin{verbatim}
+  \begin{lstlisting}[language=,numbers=none,basicstyle=\ttfamily\scriptsize]
 Error compiling Cython file:
 ------------------------------------------------------------
 ...
@@ -336,7 +335,7 @@ cdef item __pyx_convert__from_py_spead::in::item(obj) except *:
 ------------------------------------------------------------
 
 FromPyStructUtility:11:39: Expected an identifier or literal
-  \end{verbatim}
+  \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Boost.Python}
@@ -360,20 +359,13 @@ BOOST_PYTHON_MODULE(bpy_petshop)
 \begin{frame}{Sir-Not-Appearing-In-These-Slides}
   SWIG
   \begin{itemize}
-    \item Targets many languages, not just Python
     \item Understands C++ and templates
     \item Compiles to Python C API
     \item Quick glance at docs look promising!
   \end{itemize}
-  cffi
+  cffi, ctypes
   \begin{itemize}
     \item C only
-    \item Recommended for PyPy support
-  \end{itemize}
-  ctypes
-  \begin{itemize}
-    \item Also C only
-    \item No compilation step, ABI-level only
   \end{itemize}
 \end{frame}
 
@@ -386,9 +378,9 @@ BOOST_PYTHON_MODULE(bpy_petshop)
       Interface & C++ & PyPy & No new lang & Runtime\\
       \midrule
       C API & \no & \no & \yes & ---\\
-      cffi  & \no & \yes & \yes & cffi\\
       Cython & \yes & \no & \no & ---\\
       Boost.Python & \yes & \no & \yes & Boost\\
+      cffi  & \no & \yes & \yes & cffi\\
       ctypes & \no & (\yes) & \yes & ---\\
       SWIG & \yes & \no & \no & ?\\
       \bottomrule
@@ -522,7 +514,7 @@ This is just a class interchangeable with \linlinec"std::string".
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Custom Converters}
-  Define how to convert it to Python:
+  Define how to convert it to Python\footnote{only Python 3 version shown}:
   \begin{lstlisting}[language=c++]
 class bytestring_to_python
 {
@@ -534,11 +526,8 @@ public:
     }
 };
   \end{lstlisting}
-  {\footnotesize (only Python 3 version shown)}
-\end{frame}
 
-\begin{frame}[fragile=singleslide]{Custom Converters}
-  \alert{Register} the converter
+  Register the converter
   \begin{lstlisting}[language=c++]
 to_python_converter<bytestring, bytestring_to_python>();
   \end{lstlisting}
@@ -546,7 +535,7 @@ to_python_converter<bytestring, bytestring_to_python>();
 
 \subsection{Object Lifetime}
 
-\begin{frame}{Reminder}
+\begin{frame}{Refresher}
   In CPython, objects have a \alert{reference count}.
   \begin{itemize}
     \item Increment it to hold a reference.
@@ -602,7 +591,7 @@ BOOST_PYTHON_MODULE(custodian1) {
   \end{lstlisting}
   \pause
   \begin{lstlisting}[language=python,numbers=none]
->>> from custodian1 import *
+>>> from custodian import *
 >>> v = Vase()
 >>> str(v)
 'empty'
