@@ -94,6 +94,18 @@
 
 \subsection{MeerKAT}
 
+\begin{frame}{A MeerKAT Dish}
+  \begin{figure}
+    \includegraphics[width=0.9\textwidth]{mkat-dish.jpg}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{Lots Of Dishes}
+  \begin{figure}
+    \includegraphics[width=0.9\textwidth]{mkat-core.jpg}
+  \end{figure}
+\end{frame}
+
 \subsection{SPEAD}
 
 \begin{frame}{High-performance Networking}
@@ -275,76 +287,7 @@ PyMODINIT_FUNC PyInit_capi_petshop(void) {
   }%
 \end{frame}
 
-\begin{frame}{cffi}
-  C Foreign Function Interface
-  TODO:
-  - diagram
-  - mention PyPy
-\end{frame}
-
-\begin{frame}[fragile=singleslide]{cffi}{Wrap C++ in C}
-  \begin{lstlisting}[language=c]
-typedef struct
-{
-    void *parrot;
-} parrot_handle;
-
-parrot_handle parrot_new(void);
-void parrot_delete(parrot_handle);
-void parrot_voom(parrot_handle);
-void parrot_set_volts(parrot_handle, int volts);
-int parrot_get_volts(parrot_handle);
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile=singleslide]{cffi}{Wrap C in Procedural Python}
-  \begin{lstlisting}[language=python]
-from cffi import FFI
-ffi = FFI()
-
-ffi.set_source("_cffi_petshop",
-    '#include "petshop_wrap.h"',
-    include_dirs=['../cpp'],
-    sources=[
-      '../cpp/petshop_wrap.cpp', '../cpp/petshop.cpp'],
-    language='c++')
-ffi.cdef("""
-typedef struct { ...; } parrot_handle;
-parrot_handle parrot_new(void);
-void parrot_delete(parrot_handle);
-void parrot_voom(parrot_handle);
-void parrot_set_volts(parrot_handle, int volts);
-int parrot_get_volts(parrot_handle);""")
-
-if __name__ == '__main__': ffi.compile()
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile=singleslide]{cffi}{Add Back the OO}
-  \begin{lstlisting}[language=python]
-from _cffi_petshop import ffi, lib
-
-class Parrot(object):
-    def __init__(self):
-        self._this = lib.parrot_new()
-
-    def __del__(self):
-        lib.parrot_delete(self._this)
-
-    def voom(self):
-        lib.parrot_voom(self._this)
-
-    @property
-    def volts(self):
-        return lib.parrot_get_volts(self._this)
-
-    @volts.setter
-    def volts(self, value):
-        lib.parrot_set_volts(self._this, value)
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}{Cython}
+\begin{frame}{Cython}{Overview}
   TODO: diagram of how Cython works
 \end{frame}
 
@@ -422,10 +365,15 @@ BOOST_PYTHON_MODULE(bpy_petshop)
     \item Compiles to Python C API
     \item Quick glance at docs look promising!
   \end{itemize}
+  cffi
+  \begin{itemize}
+    \item C only
+    \item Recommended for PyPy support
+  \end{itemize}
   ctypes
   \begin{itemize}
-    \item Pure Python, no compilation step
-    \item Similar to cffi, but ABI-level only
+    \item Also C only
+    \item No compilation step, ABI-level only
   \end{itemize}
 \end{frame}
 
