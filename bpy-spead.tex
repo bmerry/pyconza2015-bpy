@@ -17,6 +17,7 @@
 \usepackage{amsmath}
 \usepackage{underscore}
 \usepackage{bbding}
+\usetikzlibrary{positioning}
 \definecolor{lstpurple}{rgb}{0.5,0,0.35}
 \definecolor{lstred}{rgb}{0.6,0,0}
 \definecolor{lstgreen}{rgb}{0.25,0.5,0.35}
@@ -148,14 +149,6 @@
     \item Large packets (MTU 9200)
     \item Small number of flows
     \item Bandwidth matters, latency doesn't
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Just To Make It Interesting}
-  I had some goals:
-  \begin{itemize}
-    \item Run without root privileges
-    \item Run on Linux and OS X
   \end{itemize}
 \end{frame}
 
@@ -603,13 +596,13 @@ Segmentation fault
 
 \begin{frame}[fragile=singleslide]{Custodians And Wards}
   Let's tell Boost.Python about the relationship:
-  \begin{lstlisting}[language=c++]
+  \begin{lstlisting}[language={[extra]c++}]
 BOOST_PYTHON_MODULE(custodian) {
     using namespace boost::python;
     class_<flowers>("Flowers", init<string>());
     class_<vase>("Vase")
         .def("set_contents", &vase::set_contents,
-            with_custodian_and_ward_postcall<1, 2>())
+            $with_custodian_and_ward_postcall<1, 2>()$)
         .def("__str__", &vase::str);
 }
   \end{lstlisting}
@@ -618,14 +611,30 @@ BOOST_PYTHON_MODULE(custodian) {
 \begin{frame}{Custodians And Wards}
   What Happened?
 
-  TODO: picture of the nurse and patient
+  \begin{figure}
+    \begin{tikzpicture}[
+        on grid,node distance=2cm and 4cm,
+        object/.style={
+          draw,rounded corners,minimum width=2cm, minimum height=0.8cm},
+        label/.append style={font=\footnotesize},
+        every edge/.append style={->,>=latex,auto}]
+      \node[object] (weakref) {weakref};
+      \node[object, right=of weakref] (vase) {Vase};
+      \node[object, below=of weakref] (life) {life support};
+      \node[object, right=of life] (flowers) {Flowers};
+      \path (weakref) edge[dashed] node[label] {weak} (vase);
+      \path (weakref) edge[bend left] node[label] {callback} (life);
+      \path (life) edge[bend left] (weakref);
+      \path (life) edge (flowers);
+    \end{tikzpicture}
+  \end{figure}
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Help, My Python Is Leaking!}
   What Happens Here?
   \begin{lstlisting}[language=python]
 v = Vase()
-for line in sys.stdin:
+for line in f:
     v.set_contents(Flowers(line))
   \end{lstlisting}
 \end{frame}
