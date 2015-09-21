@@ -14,8 +14,8 @@ class vase {
 private:
     flowers *contents = nullptr;
 public:
-    void set_contents(flowers *value) {
-        contents = value;
+    void set_contents(flowers &value) {
+        contents = &value;
     }
 
     string str() const {

@@ -9,7 +9,7 @@ class flowers {
 public:
     PyObject *self;
     string name;
-    explicit flowers(PyObject *self, const string &name) : self(self), name(name) {}
+    flowers(PyObject *self, const string &name) : self(self), name(name) {}
 };
 
 class vase {
@@ -17,17 +17,9 @@ private:
     flowers *contents = nullptr;
     handle<> ref;
 public:
-    void set_contents(flowers *value) {
-        if (value)
-        {
-            contents = value;
-            ref = handle<>(borrowed(value->self));
-        }
-        else
-        {
-            contents = nullptr;
-            ref.reset();
-        }
+    void set_contents(flowers &value) {
+        contents = &value;
+        ref = handle<>(borrowed(value.self));
     }
 
     string str() const {
