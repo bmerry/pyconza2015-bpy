@@ -7,3 +7,5 @@
 /*.vrb
 /bpy-spead.pdf
 *.egg-info
+*.so
+build
