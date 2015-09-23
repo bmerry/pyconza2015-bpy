@@ -117,42 +117,10 @@
     \item Designed for moving numpy arrays around
     \item Used extensively in KAT-7 and MeerKAT
     \item Lossy one-way UDP transmission, multicast-friendly
+    \item New library handles \SI{20}{Gbps} in a single stream
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Concepts}
-  \begin{description}
-    \item[Item] A multidimensional array of data.
-    \item[Heap] Unit of transmission. Contains multiple items.
-    \item[Packet] UDP packet.
-  \end{description}
-  Heaps are broken down into multiple packets
-\end{frame}
-
-\begin{frame}{Example}
-  Correlator heaps at \SI{2}{\Hz}:
-  \begin{itemize}
-    \item \texttt{xeng_raw} $8320\times 32768\times 2\times \text{int32}$
-    \item \texttt{timestamp} int
-  \end{itemize}
-  Each \SI{2}{\gibi\byte} heap is split into \SI{9}{\kilo\byte} packets.
-
-  \pause
-  Total rate is \SI{35}{Gbps} / \SI{475}{Kpps}.
-
-  \pause
-  In reality, will split this into several streams.
-\end{frame}
-
-\begin{frame}{Not Your Average High-Speed Networking}
-  \begin{itemize}
-    \item Large packets (MTU 9200)
-    \item Small number of flows
-    \item Bandwidth matters, latency doesn't
-  \end{itemize}
-\end{frame}
-
-% Add a slide giving examples of how sensitive things are
 \section{Talking to C++}
 
 \subsection{An Example C++ Library}
@@ -411,16 +379,73 @@ BOOST_PYTHON_MODULE(bpy_petshop)
 
 \section{Boost.Python}
 
-\begin{frame}<beamer>{Outline}
-  \tableofcontents[currentsection]
+\subsection{That's Easy!}
+
+\begin{frame}[fragile=singleslide]{Keyword And Default Arguments}
+  \begin{lstlisting}[language=c++]
+.def("add_udp_reader",
+      &ring_stream_wrapper::add_udp_reader,
+  (arg("port"),
+   arg("max_size")=udp_reader::default_max_size,
+   arg("buffer_size")=udp_reader::default_buffer_size,
+   arg("bind_hostname")=std::string()))
+  \end{lstlisting}
 \end{frame}
 
-\begin{frame}{Easy Things Are Easy}
-  \begin{itemize}
-    \item Keyword and default arguments
-    \item Exception mapping
-    \item Operator overloads
-  \end{itemize}
+\begin{frame}[fragile=singleslide]{Map C++ Exceptions}
+  \begin{lstlisting}[language=c++]
+static void translate_exception_stop_iteration(
+    const stop_iteration &e)
+{
+    PyErr_SetString(PyExc_StopIteration, e.what());
+}
+...
+
+    register_exception_translator<stop_iteration>(
+        &translate_exception_stop_iteration);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Operator Overloads}
+  \begin{lstlisting}[language=c++]
+class_<flavour>("Flavour", ...)
+    .def(self == self)
+    .def(self != self);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Calling Python}
+  \begin{lstlisting}[language=c++]
+namespace py = boost::python;
+void heap_wrapper::add_item(py::object item)
+{
+    std::int64_t id = p::extract<std::int64_t>(
+        item.attr("id"));
+    py::object buffer = item.attr("to_buffer")();
+    ...
+}
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Wrappers For Python Builtins}
+  \begin{lstlisting}[language=c++]
+class heap_wrapper : public heap
+{
+...
+    py::list get_items() const
+    {
+        std::vector<item> base = heap::get_items();
+        py::list out;
+        for (const item &it : base)
+        {
+            if (it.id != DESCRIPTOR_ID)
+                out.append(item_wrapper(it, self));
+        }
+        return out;
+    }
+...
+};
+  \end{lstlisting}
 \end{frame}
 
 \subsection[GIL]{Global Interpreter Lock}
