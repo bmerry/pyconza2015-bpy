@@ -488,6 +488,55 @@ public:
   \end{lstlisting}
 \end{frame}
 
+\begin{frame}[fragile]{KeyboardInterrupt}
+  Consider a simple synchronous receiver loop:
+  \begin{lstlisting}[language=python]
+for heap in stream:
+    do_stuff_with(heap)
+  \end{lstlisting}
+  What happens if I hit Ctrl-C?
+  \begin{itemize}[<+->]
+    \item Ideally, \linlinep{KeyboardInterrupt} exception.
+    \item Early in spead2 development, \alert{nothing} until next heap.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{If I Can Just Interrupt You There...}
+  A POSIX solution:
+  \begin{itemize}
+    \item Signal handlers interrupt system calls (\linlinec"EINTR")
+    \item \linlinec"PyErr_CheckInterrupts" gives interrupt handles a chance to
+      run.
+    \begin{itemize}
+      \item Return \linlinec"-1" if handler threw an exception
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{If I Can Just Interrupt You There...}
+  General pattern:
+  \begin{lstlisting}[language=c++]
+while (true) {
+    release_gil gil;
+    int result = blocking_syscall();
+    if (result == -1) {
+        if (errno == EINTR) {
+            gil.acquire();
+            if (PyErr_CheckSignals() == -1)
+                throw boost::python::error_already_set();
+        }
+        else {
+            gil.acquire();
+            PyErr_SetFromErrno(PyExc_OSError);
+            throw boost::python::error_already_set();
+        }
+    }
+    else
+        break;
+}
+  \end{lstlisting}
+\end{frame}
+
 \subsection{Unicode}
 
 \begin{frame}{Quick Reminder}
