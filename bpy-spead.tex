@@ -1,4 +1,31 @@
 \documentclass{beamer}
+% - The problem
+%   - MeerKAT
+%   - SPEAD
+%   - High performance networking, but different
+% - The approach
+%   - Why Python
+%     - we're a Python shop; protocol is based on numpy
+%   - Why C++ (and how hard is it really?)
+% - Possible solutions
+%   - Pure Python
+%   - ctypes, cffi
+%   - Cython
+%     - Show the compiler error
+%   - Python C API
+%     - Yuck!
+%   - Boost.Python
+%     - Show a noddy example
+%     - Downside: a runtime system library dependency
+% - The interesting stuff
+%   - GIL
+%     - GIL background
+%   - Lifetime management (custodian and ward)
+%   - KeyboardInterrupt
+%   - asyncio
+%   - logging
+%   - exceptions
+%   - bytestring conversion
 \mode<presentation>
 {
   \usetheme{Berkeley}
@@ -349,34 +376,6 @@ BOOST_PYTHON_MODULE(bpy_petshop)
   \end{table}
 \end{frame}
 
-% - The problem
-%   - MeerKAT
-%   - SPEAD
-%   - High performance networking, but different
-% - The approach
-%   - Why Python
-%     - we're a Python shop; protocol is based on numpy
-%   - Why C++ (and how hard is it really?)
-% - Possible solutions
-%   - Pure Python
-%   - ctypes, cffi
-%   - Cython
-%     - Show the compiler error
-%   - Python C API
-%     - Yuck!
-%   - Boost.Python
-%     - Show a noddy example
-%     - Downside: a runtime system library dependency
-% - The interesting stuff
-%   - GIL
-%     - GIL background
-%   - Lifetime management (custodian and ward)
-%   - KeyboardInterrupt
-%   - asyncio
-%   - logging
-%   - exceptions
-%   - bytestring conversion
-
 \section{Boost.Python}
 
 \subsection{That's Easy!}
@@ -428,18 +427,18 @@ void heap_wrapper::add_item(py::object item)
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Wrappers For Python Builtins}
-  \begin{lstlisting}[language=c++]
+  \begin{lstlisting}[language={[extra]c++}]
 class heap_wrapper : public heap
 {
 ...
     py::list get_items() const
     {
         std::vector<item> base = heap::get_items();
-        py::list out;
+        $py::list$ out;
         for (const item &it : base)
         {
             if (it.id != DESCRIPTOR_ID)
-                out.append(item_wrapper(it, self));
+                out.$append$(item_wrapper(it, self));
         }
         return out;
     }
@@ -664,41 +663,44 @@ for line in f:
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Backreferences}
-  Let's try another approach:
+\begin{frame}[fragile=singleslide]{A More Direct Approach}
+  Let's make \linlinec"vase" explicitly hold a reference to
+  \linlinec"flowers".
   \begin{lstlisting}[language={[extra]c++}]
-class flowers {
-public:
-    $PyObject *self;$
-    string name;
-    flowers($PyObject *self$, const string &name)
-        : $self(self)$, name(name) {}
-};
-
 class vase {
     flowers *contents = nullptr;
-    $handle<> ref;$
 public:
+    $handle<> flowers_handle;$
+
     void set_contents(flowers &value) {
         contents = &value;
-        $ref = handle<>(borrowed(value.self));$
     }
-    ...
+
+    string str() const {
+        return (contents ? contents->name : "empty");
+    }
 };
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Backreferences}
-  To make Boost.Python use the new constructor:
-  \begin{lstlisting}[language={[extra]C++}]
-BOOST_PYTHON_MODULE(backref) {
-    class_<flowers, $flowers, boost::noncopyable$>(
-        "Flowers", init<string>());
-    class_<vase>("Vase")
-        .def("set_contents", &vase::set_contents)
-        .def("__str__", &vase::str);
-}
+\begin{frame}[fragile=singleslide]{Storing A Handle}
+  \texttt{spead2} implements a call policy for this:
+  \begin{lstlisting}[language={[extra]c++}]
+class_<vase>("Vase")
+    .def("set_contents", &vase::set_contents,
+         $store_handle_postcall<
+             vase, &vase::flowers_handle, 1, 2>()$)
+    .def("__str__", &vase::str);
   \end{lstlisting}
+  See \texttt{spead2} source for \linlinec"store_handle_postcall" implementation.
+\end{frame}
+
+\begin{frame}{Caution}
+  \alert{Caution}: don't create cycles involving C++ objects
+  \begin{itemize}
+    \item Python can't garbage collect such cycles
+    \item C API has a solution to this, but Boost.Python doesn't expose it
+  \end{itemize}
 \end{frame}
 
 \section*{Summary}
@@ -715,6 +717,7 @@ BOOST_PYTHON_MODULE(backref) {
   \begin{itemize}
     \item Introduces a system library dependency
     \item Lots of deep metaprogramming magic
+    \item Doesn't support all C API functionality
     \item Doesn't support PyPy\footnote{as far as I know}
   \end{itemize}
 \end{frame}
