@@ -7,7 +7,6 @@ extension = Extension(
     sources=['custodian.cpp'],
     extra_compile_args=['-std=c++11', '-DUSE_CUSTODIAN_AND_WARD'],
     language='c++',
-    include_dirs=['../cpp'],
     libraries=['boost_python-py{}{}'.format(sys.version_info.major, sys.version_info.minor)])
 
 setup(name='custodian', ext_modules=[extension])
