@@ -1,31 +1,4 @@
 \documentclass{beamer}
-% - The problem
-%   - MeerKAT
-%   - SPEAD
-%   - High performance networking, but different
-% - The approach
-%   - Why Python
-%     - we're a Python shop; protocol is based on numpy
-%   - Why C++ (and how hard is it really?)
-% - Possible solutions
-%   - Pure Python
-%   - ctypes, cffi
-%   - Cython
-%     - Show the compiler error
-%   - Python C API
-%     - Yuck!
-%   - Boost.Python
-%     - Show a noddy example
-%     - Downside: a runtime system library dependency
-% - The interesting stuff
-%   - GIL
-%     - GIL background
-%   - Lifetime management (custodian and ward)
-%   - KeyboardInterrupt
-%   - asyncio
-%   - logging
-%   - exceptions
-%   - bytestring conversion
 \mode<presentation>
 {
   \usetheme{Berkeley}
@@ -769,6 +742,10 @@ while (true) {
     \item Doesn't support all C API functionality
     \item Doesn't support PyPy\footnote{as far as I know}
   \end{itemize}
+\end{frame}
+
+\begin{frame}{Questions}
+  Code samples at \url{https://github.com/bmerry/pyconza2015-bpy}
 \end{frame}
 
 \end{document}

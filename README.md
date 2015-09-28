@@ -5,7 +5,7 @@ These are the slides from my talk at [PyCon ZA 2015](https://za.pycon.org). The
 examples shown in the slides.
 
 License
--------
+=======
 The photographs may be used for educational/communication purposes (more can be
 downloaded from [SKA SA](http://www.ska.ac.za/media/visuals.php)).
 
