@@ -3,7 +3,7 @@
 {
   \usetheme{Berkeley}
   \setbeamertemplate{footline}[frame number]
-  \setbeamercovered{transparent}
+  %\setbeamercovered{transparent}
 }
 \usepackage[english]{babel}
 \usepackage[latin1]{inputenc}
@@ -249,10 +249,30 @@ PyMODINIT_FUNC PyInit_capi_petshop(void) {
 \end{frame}
 
 \begin{frame}{Cython}{Overview}
-  TODO: diagram of how Cython works
+  \begin{figure}
+    \begin{tikzpicture}[
+      every node/.style={on grid},
+      node distance=2cm and 2.2cm,
+      file/.style={draw, rounded corners, minimum width=1.75cm, minimum height=1cm},
+      >=latex
+    ]
+      \node (cython) {Cython};
+      \node (pyx) [file,left=of cython] {\texttt{.pyx}};
+      \node (pxd) [file,above=of cython] {\texttt{.pxd}};
+      \node (c) [file,right=of cython] {\texttt{.c}};
+      \node (gcc) [right=of c] {GCC};
+      \node (so) [file,below=of gcc] {\texttt{.so}};
+      \draw[->] (pyx) -- (cython);
+      \draw[->] (pxd) -- (cython);
+      \draw[->] (cython) -- (c);
+      \draw[->] (c) -- (gcc);
+      \draw[->] (gcc) -- (so);
+    \end{tikzpicture}
+  \end{figure}
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Cython}{Definition File}
+  \texttt{c_petshop.pxd}
   \begin{lstlisting}[language=cython]
 cdef extern from "petshop.h" namespace "petshop":
     cdef cppclass Parrot:
@@ -263,6 +283,7 @@ cdef extern from "petshop.h" namespace "petshop":
 \end{frame}
 
 \begin{frame}[fragile=singleslide]{Cython}{Wrapper}
+  \texttt{cython_petshop.pyx}
   \begin{lstlisting}[language=cython]
 cimport c_petshop
 
@@ -299,7 +320,8 @@ FromPyStructUtility:11:39: Expected an identifier or literal
   \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile=singleslide]{Boost.Python}
+\begin{frame}[fragile]{Boost.Python}
+  \pause
   \begin{lstlisting}[language=c++]
 #include <boost/python.hpp>
 #include "petshop.h"
@@ -636,9 +658,9 @@ to_python_converter<bytestring, bytestring_to_python>();
 \end{frame}
 
 \subsection[GIL]{Global Interpreter Lock}
-
 \begin{frame}{Why do we care?}
-  \begin{itemize}
+  Python threads hold the GIL while executing.
+  \begin{itemize}[<+->]
     \item Waiting for a heap should not block other threads
     \item Non-Python threads calling Python code
   \end{itemize}
